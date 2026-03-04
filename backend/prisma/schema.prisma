@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  role         UserRole  @default(USER)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions       Session[]
+  brandProfile   BrandProfile?
+  subscriptions  Subscription[]
+  creditLedgers  CreditLedger[]
+  contentInputs  ContentInput[]
+  generationJobs GenerationJob[]
+}
+
+model Session {
+  id               String   @id @default(uuid())
+  userId           String
+  refreshTokenHash String
+  ipAddress        String
+  userAgent        String
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([refreshTokenHash])
+}
+
+model BrandProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  niche          String
+  targetAudience String
+  coreExpertise  String
+  offerDetails   String
+  tone           String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                    String           @id @default(uuid())
+  userId                String
+  razorpaySubscriptionId String          @unique
+  plan                  SubscriptionPlan
+  status                SubscriptionStatus
+  currentPeriodEnd      DateTime
+  monthlyCreditLimit    Int
+  creditsUsed           Int              @default(0)
+  extraCredits          Int              @default(0)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([razorpaySubscriptionId])
+}
+
+model CreditLedger {
+  id          String          @id @default(uuid())
+  userId      String
+  type        CreditLedgerType
+  amount      Int
+  description String
+  createdAt   DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model ContentInput {
+  id             String          @id @default(uuid())
+  userId         String
+  mode           ContentMode
+  rawContent     String
+  cleanedContent String?
+  createdAt      DateTime        @default(now())
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generationJobs GenerationJob[]
+
+  @@index([userId, createdAt])
+}
+
+model GenerationJob {
+  id              String          @id @default(uuid())
+  userId          String
+  contentInputId  String
+  status          GenerationStatus @default(PENDING)
+  tierUsed        SubscriptionPlan
+  creditsConsumed Int
+  errorMessage    String?
+  createdAt       DateTime        @default(now())
+  completedAt     DateTime?
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentInput ContentInput @relation(fields: [contentInputId], references: [id], onDelete: Cascade)
+  generatedPosts GeneratedPost[]
+
+  @@index([userId, createdAt])
+}
+
+model GeneratedPost {
+  id             String   @id @default(uuid())
+  jobId          String
+  hook           String
+  body           String
+  cta            String
+  finalFormatted String
+  createdAt      DateTime @default(now())
+
+  job GenerationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+}
+
+model PaymentEvent {
+  id              String   @id @default(uuid())
+  razorpayEventId String   @unique
+  type            String
+  payload         Json
+  createdAt       DateTime @default(now())
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum SubscriptionPlan {
+  BASIC
+  PROFESSIONAL
+  AUTHORITY
+}
+
+enum CreditLedgerType {
+  DEDUCTION
+  REFUND
+  PURCHASE
+  RENEWAL
+}
+
+enum ContentMode {
+  QUICK
+  REPURPOSE
+}
+
+enum GenerationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
