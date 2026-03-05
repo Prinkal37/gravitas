@@ -4,13 +4,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import { json, urlencoded } from "body-parser";
-import { rateLimiterMiddleware } from "./middleware/rateLimiter";
 import { errorHandler } from "./middleware/errorHandler";
-import { authRouter } from "./routes/authRoutes";
-import { generationRouter } from "./routes/generationRoutes";
-import { jobsRouter } from "./routes/jobsRoutes";
-import { subscriptionRouter } from "./routes/subscriptionRoutes";
-import { webhookRouter } from "./routes/webhookRoutes";
+import routes from "./routes";
 import { validateEnv } from "./lib/env";
 
 validateEnv();
@@ -30,11 +25,7 @@ export const createApp = (): Application => {
   app.use(json({ limit: "1mb" }));
   app.use(urlencoded({ extended: true }));
 
-  app.use("/api/v1/auth", rateLimiterMiddleware, authRouter);
-  app.use("/api/v1/generation", generationRouter);
-  app.use("/api/v1/jobs", jobsRouter);
-  app.use("/api/v1/subscription", subscriptionRouter);
-  app.use("/api/v1/webhooks", webhookRouter);
+  app.use("/api", routes);
 
   app.use(errorHandler);
 
