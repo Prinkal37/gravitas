@@ -57,6 +57,7 @@ model Subscription {
   userId                String
   razorpaySubscriptionId String          @unique
   plan                  SubscriptionPlan
+  interval              SubscriptionInterval
   status                SubscriptionStatus
   currentPeriodEnd      DateTime
   monthlyCreditLimit    Int
@@ -72,12 +73,14 @@ model Subscription {
 }
 
 model CreditLedger {
-  id          String          @id @default(uuid())
+  id          String           @id @default(uuid())
   userId      String
   type        CreditLedgerType
   amount      Int
   description String
-  createdAt   DateTime        @default(now())
+  referenceId String?
+  metadata    Json?
+  createdAt   DateTime         @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -149,11 +152,19 @@ enum SubscriptionPlan {
   AUTHORITY
 }
 
+enum SubscriptionInterval {
+  MONTHLY
+  ANNUAL
+}
+
 enum CreditLedgerType {
-  DEDUCTION
-  REFUND
-  PURCHASE
-  RENEWAL
+  SUBSCRIPTION_CREDIT
+  GENERATION_DEDUCTION
+  GENERATION_REFUND
+  EXTRA_CREDIT_PURCHASE
+  ADMIN_ADJUSTMENT
+  SIGNUP_BONUS
+  ACTIVATION_BONUS
 }
 
 enum ContentMode {
