@@ -81,7 +81,10 @@ export const handleRazorpayEvent = async (
     .update(payloadString, "utf8")
     .digest("hex");
 
-  if (providedSignature !== expectedSignature) {
+  const sigA = Buffer.from(providedSignature);
+  const sigB = Buffer.from(expectedSignature);
+
+  if (sigA.length !== sigB.length || !crypto.timingSafeEqual(sigA, sigB)) {
     throw new Error("Invalid Razorpay signature");
   }
 
