@@ -89,49 +89,57 @@ model CreditLedger {
 }
 
 model ContentInput {
-  id             String          @id @default(uuid())
-  userId         String
-  mode           ContentMode
-  rawContent     String
-  cleanedContent String?
-  createdAt      DateTime        @default(now())
+  id          String          @id @default(uuid())
+  userId      String
+  type        ContentInputType
+  topic       String?
+  idea        String?
+  transcript  String?
+  createdAt   DateTime        @default(now())
 
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   generationJobs GenerationJob[]
 
-  @@index([userId, createdAt])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model GenerationJob {
-  id              String          @id @default(uuid())
+  id              String             @id @default(uuid())
   userId          String
   contentInputId  String
-  status          GenerationStatus @default(PENDING)
-  tierUsed        SubscriptionPlan
+  status          GenerationJobStatus @default(PENDING)
   creditsConsumed Int
-  errorMessage    String?
-  createdAt       DateTime        @default(now())
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  startedAt       DateTime?
   completedAt     DateTime?
+  failedAt        DateTime?
+  errorMessage    String?
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   contentInput ContentInput @relation(fields: [contentInputId], references: [id], onDelete: Cascade)
   generatedPosts GeneratedPost[]
 
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
   @@index([userId, createdAt])
+  @@index([contentInputId])
 }
 
 model GeneratedPost {
-  id             String   @id @default(uuid())
+  id             String          @id @default(uuid())
   jobId          String
-  hook           String
-  body           String
-  cta            String
-  finalFormatted String
-  createdAt      DateTime @default(now())
+  content        String
+  structureType  PostStructureType
+  orderIndex     Int
+  createdAt      DateTime        @default(now())
 
   job GenerationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@index([jobId])
+  @@unique([jobId, orderIndex])
 }
 
 model PaymentEvent {
@@ -168,16 +176,25 @@ enum CreditLedgerType {
   ACTIVATION_BONUS
 }
 
-enum ContentMode {
+enum ContentInputType {
   QUICK
   REPURPOSE
 }
 
-enum GenerationStatus {
+enum GenerationJobStatus {
   PENDING
   PROCESSING
   COMPLETED
   FAILED
+}
+
+enum PostStructureType {
+  HOOK_INSIGHT
+  STORY_LESSON
+  LIST
+  CONTRARIAN
+  EDUCATIONAL
+  FRAMEWORK
 }
 
 enum SubscriptionStatus {

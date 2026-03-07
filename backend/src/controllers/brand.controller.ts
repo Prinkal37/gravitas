@@ -1,18 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { brandProfileSchema } from "../validators/brand.validator";
 import * as brandService from "../services/brand.service";
-
-type AsyncHandler = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => Promise<void>;
-
-const asyncHandler =
-  (fn: AsyncHandler) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
+import { asyncHandler } from "../utils/asyncHandler";
 
 type AuthenticatedRequest = Request & { user: { id: string } };
 

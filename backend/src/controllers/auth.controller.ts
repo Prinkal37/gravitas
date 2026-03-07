@@ -1,18 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { registerSchema, loginSchema } from "../validators/auth.validator";
 import * as authService from "../services/auth.service";
-
-type AsyncHandler = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => Promise<void>;
-
-const asyncHandler =
-  (fn: AsyncHandler) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
+import { asyncHandler } from "../utils/asyncHandler";
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
   const body = registerSchema.parse(req.body);
